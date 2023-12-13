@@ -1,8 +1,19 @@
 [package]
-name = "InetMirror"
+name = "inet_mirror"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+clap = { version = "4.4.2", features = ["derive"] }
+futures-util = "0.3.28"
+indicatif = "0.17.6"
+reqwest = {version = "0.11.20", features = ["stream"] }
+serde = "1.0.188"
+serde_derive = "1.0.188"
+serde_json = "1.0.105"
+tokio = { version = "1.32.0", features = ["full"] }
+log = "0.4"
+fern = { version = "0.6", features = ["colored"] }
+humantime = "2.1.0"
