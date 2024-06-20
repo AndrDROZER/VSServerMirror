@@ -26,11 +26,17 @@ enum Commands {
     /// Mirror vscode-servers
     #[command(arg_required_else_help = true)]
     Vserver {
+        #[arg(short, long)]
+        github_token: String,
+
         #[arg(last = true)]
         dir: Option<String>,
 
         #[arg(short, long, default_value_t = 5)]
         threads: usize,
+
+        #[arg(short, long, default_value_t = 5)]
+        count: usize
     },
 
     /// Mirror python-packages
@@ -44,17 +50,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let args = Cli::parse();
     match args.command {
-        Commands::Vserver { dir, threads } => {
-            let token = match std::env::var("GITHUB_TOKEN") {
-                Ok(t) => t,
-                Err(_) => {
-                    error!("GITHUB_TOKEN variable doesn't set");
-                    return Ok(());
-                }
-            };
+        Commands::Vserver { github_token, dir, threads , count} => {
+           // let token = match std::env::var("GITHUB_TOKEN") {
+           //     Ok(t) => t,
+           //     Err(_) => {
+           //         error!("GITHUB_TOKEN variable doesn't set");
+           //         return Ok(());
+           //     }
+           // };
 
             info!("Downloading vscode...!");
-            process_vscode(dir, threads, token).await?;
+            process_vscode(dir, threads, github_token, count).await?;
         }
 
         Commands::Pip { dir: _ } => {
@@ -90,6 +96,7 @@ async fn process_vscode(
     dir: Option<String>,
     threads: usize,
     token: String,
+    count: usize
 ) -> Result<(), Box<dyn std::error::Error>> {
     let path = dir.unwrap_or("vscode".to_owned());
     match std::fs::create_dir(&path) {
@@ -103,7 +110,7 @@ async fn process_vscode(
 
     // let commits = get_releases(owner, repo).await?;
 
-    let release_sha_vec = get_releases(owner, repo, &threads, token).await?;
+    let release_sha_vec = get_releases(owner, repo, &threads, token, count).await?;
     let mut set = tokio::task::JoinSet::new();
 
     let multiple_bar = MultiProgress::new();
@@ -229,8 +236,9 @@ async fn get_releases(
     repo: String,
     threads: &usize,
     token: String,
+    count: usize
 ) -> Result<Vec<String>, Box<dyn std::error::Error>> {
-    let github_repo_info_url = format!("https://api.github.com/repos/{}/{}/releases", owner, repo);
+    let github_repo_info_url = format!("https://api.github.com/repos/{}/{}/releases?per_page={}", owner, repo, count);
     let tag_arr = collect_tags_from_github_repo(&github_repo_info_url, token.clone()).await?;
 
     let sha_arr: Vec<String> =
