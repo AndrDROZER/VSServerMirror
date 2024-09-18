@@ -1,21 +1,20 @@
 use clap::{Parser, Subcommand};
 use core::cmp::min;
-use std::fmt::format;
 use fern::colors::{Color, ColoredLevelConfig};
 use futures_util::StreamExt;
 use indicatif::{MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};
-use log::{error, info, trace, warn};
+use log::{error, info};
 use reqwest::Response;
-use std::time::SystemTime;
-use std::{env, io::Write};
+use std::env;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
 
 static APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
 
 #[derive(Parser, Debug)]
-#[command(name = "inetm")]
-#[command(author = "DROZER", about = "Command for Inet Mirroring", long_about = None)]
+#[command(name = "vsmirror")]
+#[command(author = "DROZER", about = "Tool for mirroring vs-code servers", long_about = None)]
+
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -37,11 +36,7 @@ enum Commands {
 
         #[arg(short, long, default_value_t = 5)]
         count: usize
-    },
-
-    /// Mirror python-packages
-    #[command(arg_required_else_help = true)]
-    Pip { dir: Option<String> },
+    }
 }
 
 #[tokio::main]
@@ -51,20 +46,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Cli::parse();
     match args.command {
         Commands::Vserver { github_token, dir, threads , count} => {
-           // let token = match std::env::var("GITHUB_TOKEN") {
-           //     Ok(t) => t,
-           //     Err(_) => {
-           //         error!("GITHUB_TOKEN variable doesn't set");
-           //         return Ok(());
-           //     }
-           // };
-
             info!("Downloading vscode...!");
             process_vscode(dir, threads, github_token, count).await?;
-        }
-
-        Commands::Pip { dir: _ } => {
-            info!("Downloading pip...!");
         }
     }
 
